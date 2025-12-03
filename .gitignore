@@ -1,0 +1,17 @@
+# Python virtual env
+ai/.venv/
+venv/
+env/
+
+# Cache Python
+__pycache__/
+*.pyc
+
+# Model files
+*.pt
+*.pth
+*.h5
+
+# Torch libraries
+ai/**/*.dll
+ai/**/*.lib
