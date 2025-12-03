@@ -15,3 +15,13 @@ __pycache__/
 # Torch libraries
 ai/**/*.dll
 ai/**/*.lib
+
+ai/.venv/
+ai/venv/
+ai/env/
+__pycache__/
+*.dll
+*.lib
+*.pt
+*.pth
+*.so
