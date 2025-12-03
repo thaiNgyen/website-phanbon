@@ -1,0 +1,15 @@
+<!doctype html><meta charset="utf-8">
+<title>Coffee Leaf – Demo</title>
+<h2>Upload a coffee leaf image</h2>
+<input id="f" type="file" accept="image/*">
+<button onclick="go()">Predict</button>
+<pre id="out"></pre>
+<script>
+async function go() {
+  const f = document.getElementById('f').files[0];
+  if(!f){ alert('Choose an image'); return; }
+  const fd = new FormData(); fd.append('file', f);
+  const r = await fetch('/predict', {method:'POST', body:fd});
+  document.getElementById('out').textContent = JSON.stringify(await r.json(), null, 2);
+}
+</script>
