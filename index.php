@@ -45,5 +45,12 @@ if (!method_exists($controller, $action)) {
     die('Action not found in ' . $controllerName);
 }
 
+if ($url[0] == "detect") {
+    require_once "./controllers/DetectController.php";
+    $ctrl = new DetectController();
+    $ctrl->index();
+    return;
+}
+
 // Gọi action với các tham số còn lại từ URL (nếu có)
 call_user_func_array([$controller, $action], array_slice($url, 2));

@@ -246,6 +246,9 @@ require_once __DIR__ . '/../../helpers/SessionHelper.php';
                     <a class="nav-link font-weight-bold text-danger" href="/Website-PhanBon/Product/">
                         <i class="bi bi-house-door-fill"></i> TRANG CHỦ
                     </a>
+                    <a class="nav-link font-weight-bold text-danger" href="/Website-PhanBon/Detect/">
+                        DỰ ĐOÁN BỆNH
+                    </a>
                 </li>
 
                 <!-- Dropdown Quản Trị Admin (CHỈ ADMIN THẤY) -->

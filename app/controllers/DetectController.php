@@ -1,50 +1,81 @@
 <?php
-require_once __DIR__ . '/../helpers/AiService.php';
 
 class DetectController {
-    private string $apiUrl = 'http://127.0.0.1:9000/predict';
-
-    public function __construct() {
-        // Đảm bảo AI server đang chạy (xem phần B)
-        AiService::ensureRunning();
-    }
 
     public function index() {
-        $result = null; $error = null;
+        // TỰ ĐỘNG KHỞI ĐỘNG AI (nếu chưa chạy)
+        $this->ensureAiServerRunning();
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['leaf'])) {
-            try {
-                $docroot = rtrim($_SERVER['DOCUMENT_ROOT'], '/');
-                $uploadDir = $docroot . '/Website-PhanBon/uploads/';
-                if (!is_dir($uploadDir)) @mkdir($uploadDir, 0777, true);
+        $result = null;
 
-                if ($_FILES['leaf']['error'] !== UPLOAD_ERR_OK) throw new Exception("Upload lỗi.");
-                if (!getimagesize($_FILES['leaf']['tmp_name'])) throw new Exception("Không phải ảnh.");
-                $ext = strtolower(pathinfo($_FILES['leaf']['name'], PATHINFO_EXTENSION));
-                if (!in_array($ext,['jpg','jpeg','png','webp'])) throw new Exception("Chỉ JPG/JPEG/PNG/WEBP.");
+        if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["image"])) {
+            $imgPath = $_FILES["image"]["tmp_name"];
+            $result = $this->callAI($imgPath);
+            $fileTmp = $_FILES["image"]["tmp_name"];
+            $fileName = time() . "_" . $_FILES["image"]["name"];
+            $savePath = __DIR__ . "/../../uploads/" . $fileName;
 
-                $name = uniqid().'_'.time().'.'.$ext;
-                $dest = $uploadDir.$name;
-                move_uploaded_file($_FILES['leaf']['tmp_name'], $dest);
+            move_uploaded_file($fileTmp, $savePath);
 
-                // gọi FastAPI
-                $cfile = new CURLFile($dest, mime_content_type($dest), basename($dest));
-                $post = ['file' => $cfile];
-                $ch = curl_init($this->apiUrl);
-                curl_setopt_array($ch,[
-                    CURLOPT_POST=>true, CURLOPT_POSTFIELDS=>$post,
-                    CURLOPT_RETURNTRANSFER=>true, CURLOPT_TIMEOUT=>30
-                ]);
-                $res = curl_exec($ch);
-                if ($res === false) throw new Exception("Không gọi được AI: ".curl_error($ch));
-                $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                curl_close($ch);
-                if ($code !== 200) throw new Exception("AI trả mã $code: $res");
-                $result = json_decode($res, true);
-            } catch (Exception $e) { $error = $e->getMessage(); }
+            // Gửi ảnh cho AI
+            $result = $this->callAI($savePath);
+
+            // Trả đường dẫn ảnh cho view
+            $uploadedImage = "/Website-PhanBon/uploads/" . $fileName;
+        }
+        $uploadedImage = $uploadedImage ?? null;
+        require __DIR__ . '/../views/product/detect.php';
+    }
+
+
+    // KIỂM TRA FASTAPI CÓ ĐANG CHẠY KHÔNG
+    private function isAPIAlive() {
+        $ch = curl_init("http://127.0.0.1:8000/docs");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        return $code === 200;
+    }
+
+
+    // TỰ ĐỘNG KHỞI ĐỘNG AIMODEL
+    private function ensureAiServerRunning() {
+
+        if ($this->isAPIAlive()) return;
+
+        $bat = 'E:\\xampp\\htdocs\\website-phanbon\\ai\\run_ai_hidden.bat';
+
+        // chạy ẩn không bật CMD
+        pclose(popen("start /B cmd /C \"$bat\"", "r"));
+
+        sleep(2); // đợi AI khởi động
+    }
+
+
+    // GỌI API DỰ ĐOÁN
+    private function callAI($imagePath) {
+        $url = "http://127.0.0.1:8000/predict";
+
+        $file = curl_file_create($imagePath);
+        $payload = ["file" => $file];
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        if (!$response) {
+            return [
+                "class" => "Không nhận được phản hồi từ AI",
+                "confidence" => 0
+            ];
         }
 
-        $pageTitle = "Nhận biết bệnh lá cà phê";
-        include 'app/views/product/detect.php';
+        $data = json_decode($response, true);
+        return $data["result"] ?? null;
     }
 }
