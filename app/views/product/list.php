@@ -3,21 +3,17 @@
 
 <?php
     // ===== PHÂN TRANG: Mỗi trang 8 sản phẩm =====
-    $itemsPerPage = 8; // ✅ Mỗi trang 8 sản phẩm
-    // Lấy trang hiện tại từ query string, mặc định là 1
+    $itemsPerPage = 8;
     $currentPage = isset($_GET['page']) && (int)$_GET['page'] > 0 ? (int)$_GET['page'] : 1;
 
-    // Đảm bảo $products là mảng để đếm và cắt trang
     $totalItems = (isset($products) && is_array($products)) ? count($products) : 0;
     $totalPages = $totalItems > 0 ? (int)ceil($totalItems / $itemsPerPage) : 1;
 
-    // Nếu user nhập page > tổng số trang thì cho về trang cuối cùng
     if ($currentPage > $totalPages) {
         $currentPage = $totalPages;
     }
 
     $offset = ($currentPage - 1) * $itemsPerPage;
-    // Lấy danh sách sản phẩm cho trang hiện tại
     $productsPage = $totalItems > 0 ? array_slice($products, $offset, $itemsPerPage) : [];
 ?>
 
@@ -30,7 +26,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
 
-    <style> 
+    <style>
+        /* ... toàn bộ CSS giữ nguyên như bạn đã viết ... */
         @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
         body { background-color: #ffffff; font-family: 'Be Vietnam Pro', sans-serif; }
         .page-header { text-align: center; margin-bottom: 40px; }
@@ -43,21 +40,14 @@
             border-color: #27ae60; box-shadow: 0 0 0 0.25rem rgba(39, 174, 96, 0.2);
         }
 
-        /* ✅ Lưới 4 sản phẩm mỗi hàng */
         .product-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 20px;
         }
-        @media (max-width: 992px) {
-            .product-grid { grid-template-columns: repeat(3, 1fr); }
-        }
-        @media (max-width: 768px) {
-            .product-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 576px) {
-            .product-grid { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 992px) { .product-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 768px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 576px) { .product-grid { grid-template-columns: 1fr; } }
 
         .product-card {
             background: #f8f9fa; border-radius: 12px; transition: box-shadow 0.3s ease;
@@ -77,7 +67,6 @@
         .product-title a:hover { color: #007bff; }
         .product-price { font-size: 1rem; font-weight: 600; color: #28a745; margin-top: 8px; }
 
-        /* Action buttons */
         .product-actions {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; align-items: center; justify-content: center;
@@ -97,7 +86,6 @@
         .btn-edit { background-color: #007bff; }
         .btn-delete { background-color: #dc3545; }
 
-        /* Toast */
         .toast-notification {
             position: fixed; bottom: 30px; right: 30px; background: #28a745; color: white;
             padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
@@ -105,20 +93,15 @@
             animation: slideIn 0.3s ease;
         }
 
-        /* Sửa lại selector cho banner */
         #bannerCarousel img {
             width: 100%;
-            height: 500px; /* ✅ Chiều cao banner */
+            height: 500px;
             object-fit: cover;
             border-radius: 16px;
         }
-        .carousel-indicators [data-bs-target] {
-            background-color: #28a745; /* Màu chấm */
-        }
+        .carousel-indicators [data-bs-target] { background-color: #28a745; }
         .carousel-control-prev-icon,
-        .carousel-control-next-icon {
-            filter: invert(1) brightness(1.5); /* Làm mũi tên trắng nổi bật hơn */
-        }
+        .carousel-control-next-icon { filter: invert(1) brightness(1.5); }
 
         @keyframes slideIn { from {transform: translateX(400px); opacity: 0;} to {transform: translateX(0); opacity: 1;} }
         @keyframes slideOut { from {transform: translateX(0); opacity: 1;} to {transform: translateX(400px); opacity: 0;} }
@@ -128,33 +111,19 @@
 <body>
 <div class="container py-5">
 
-    <!-- 🖼️ Banner Slider -->
+    <!-- Banner -->
     <div id="bannerCarousel" class="carousel slide mb-5 shadow-sm rounded-4 overflow-hidden" data-bs-ride="carousel">
         <div class="carousel-inner">
-            <!-- Ảnh banner 1 -->
             <div class="carousel-item active">
                 <img src="/Website-PhanBon/uploads/banner1.webp" class="d-block w-100" alt="Banner 1">
             </div>
-            <!-- Ảnh banner khác (nếu muốn bật lại) -->
-            <!--
-            <div class="carousel-item">
-                <img src="/Website-PhanBon/uploads/banner3.jpg" class="d-block w-100" alt="Banner 2">
-            </div>
-            <div class="carousel-item">
-                <img src="/Website-PhanBon/uploads/banner4.png" class="d-block w-100" alt="Banner 3">
-            </div>
-            -->
         </div>
-
-        <!-- Nút điều hướng -->
         <button class="carousel-control-prev" type="button" data-bs-target="#bannerCarousel" data-bs-slide="prev">
             <span class="carousel-control-prev-icon"></span>
         </button>
         <button class="carousel-control-next" type="button" data-bs-target="#bannerCarousel" data-bs-slide="next">
             <span class="carousel-control-next-icon"></span>
         </button>
-
-        <!-- Chấm nhỏ phía dưới -->
         <div class="carousel-indicators">
             <button type="button" data-bs-target="#bannerCarousel" data-bs-slide-to="0" class="active"></button>
             <button type="button" data-bs-target="#bannerCarousel" data-bs-slide-to="1"></button>
@@ -233,31 +202,19 @@
         <?php endif; ?>
     </div>
 
-    <!-- ===== THANH PHÂN TRANG ===== -->
     <?php if ($totalPages > 1): ?>
         <nav aria-label="Page navigation" class="mt-4">
             <ul class="pagination justify-content-center">
-                <!-- Nút Previous -->
                 <li class="page-item <?php echo $currentPage <= 1 ? 'disabled' : ''; ?>">
-                    <a class="page-link" href="?page=<?php echo max(1, $currentPage - 1); ?>" tabindex="-1">
-                        «
-                    </a>
+                    <a class="page-link" href="?page=<?php echo max(1, $currentPage - 1); ?>" tabindex="-1">«</a>
                 </li>
-
-                <!-- Các số trang -->
                 <?php for ($i = 1; $i <= $totalPages; $i++): ?>
                     <li class="page-item <?php echo $i == $currentPage ? 'active' : ''; ?>">
-                        <a class="page-link" href="?page=<?php echo $i; ?>">
-                            <?php echo $i; ?>
-                        </a>
+                        <a class="page-link" href="?page=<?php echo $i; ?>"><?php echo $i; ?></a>
                     </li>
                 <?php endfor; ?>
-
-                <!-- Nút Next -->
                 <li class="page-item <?php echo $currentPage >= $totalPages ? 'disabled' : ''; ?>">
-                    <a class="page-link" href="?page=<?php echo min($totalPages, $currentPage + 1); ?>">
-                        »
-                    </a>
+                    <a class="page-link" href="?page=<?php echo min($totalPages, $currentPage + 1); ?>">»</a>
                 </li>
             </ul>
         </nav>
@@ -268,6 +225,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
 
 <script>
+// 🔐 Trạng thái đăng nhập từ PHP đưa xuống JS
+const IS_LOGGED_IN = <?php echo SessionHelper::isLoggedIn() ? 'true' : 'false'; ?>;
+
 // ======== HIỂN THỊ TOAST ========
 function showToast(message) {
     const oldToast = document.querySelector('.toast-notification');
@@ -296,27 +256,33 @@ document.getElementById('searchInput').addEventListener('input', function(e) {
     });
 });
 
-// ======== THÊM VÀO GIỎ HÀNG (CÓ CẬP NHẬT HEADER) ========
+// ======== THÊM VÀO GIỎ HÀNG (YÊU CẦU ĐĂNG NHẬP) ========
 document.addEventListener('click', function(event) {
     const button = event.target.closest('.add-to-cart-btn');
     if (!button) return;
     event.preventDefault();
 
+    // 🔐 Nếu chưa đăng nhập thì không cho thêm giỏ
+    if (!IS_LOGGED_IN) {
+        if (confirm('Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng.\n\nBạn có muốn chuyển đến trang đăng nhập không?')) {
+            window.location.href = '/Website-PhanBon/account/login';
+        }
+        return;
+    }
+
     const productId = button.dataset.id;
     const icon = button.querySelector('i');
     button.disabled = true;
     icon.classList.replace('bi-cart-plus', 'bi-arrow-clockwise');
-    icon.classList.add('spinner');
 
     fetch(`/Website-PhanBon/Product/addToCart/${productId}`)
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                icon.classList.remove('bi-arrow-clockwise', 'spinner');
+                icon.classList.remove('bi-arrow-clockwise');
                 icon.classList.add('bi-check-lg');
                 showToast('✓ Đã thêm vào giỏ hàng!');
 
-                // 🔥 Gửi sự kiện để header cập nhật số lượng
                 const event = new CustomEvent('cartUpdated', { detail: { cartCount: data.cartCount } });
                 document.dispatchEvent(event);
 
@@ -331,7 +297,7 @@ document.addEventListener('click', function(event) {
         })
         .catch(err => {
             alert('Lỗi: ' + err.message);
-            icon.classList.remove('bi-arrow-clockwise', 'spinner');
+            icon.classList.remove('bi-arrow-clockwise');
             icon.classList.add('bi-cart-plus');
             button.disabled = false;
         });

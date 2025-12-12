@@ -189,6 +189,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('subtotal-' + productId).innerHTML = `<strong>${data.itemSubtotal}</strong>`;
                 document.getElementById('cart-subtotal').textContent = data.cartTotal;
                 document.getElementById('cart-total').innerHTML = `<strong>${data.cartTotal}</strong>`;
+
+                // 🔹 Cập nhật badge giỏ hàng trên header
+                if (typeof data.cartCount !== 'undefined') {
+                    document.dispatchEvent(new CustomEvent('cartUpdated', {
+                        detail: { cartCount: data.cartCount }
+                    }));
+                }
             } else {
                 alert(data.message || 'Có lỗi xảy ra khi cập nhật giỏ hàng.');
             }
@@ -207,9 +214,19 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                document.getElementById('product-row-' + productId).remove();
+                const row = document.getElementById('product-row-' + productId);
+                if (row) row.remove();
+
                 document.getElementById('cart-subtotal').textContent = data.cartTotal;
                 document.getElementById('cart-total').innerHTML = `<strong>${data.cartTotal}</strong>`;
+
+                // 🔹 Cập nhật badge giỏ hàng trên header
+                if (typeof data.cartCount !== 'undefined') {
+                    document.dispatchEvent(new CustomEvent('cartUpdated', {
+                        detail: { cartCount: data.cartCount }
+                    }));
+                }
+
                 if (data.cartEmpty) {
                     document.getElementById('cart-content-wrapper').style.display = 'none';
                     document.getElementById('empty-cart-message').style.display = 'block';

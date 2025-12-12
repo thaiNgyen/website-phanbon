@@ -1,28 +1,22 @@
 <?php
-require_once('app/config/database.php');
-require_once('app/models/ProductModel.php');
-require_once('app/models/CategoryModel.php');
+require_once 'app/config/database.php';
+require_once 'app/models/ProductModel.php';
+require_once 'app/models/CategoryModel.php';
+require_once 'app/helpers/SessionHelper.php';
 
 class ProductController {
     private $productModel;
     private $db;
     
     public function __construct() {
-        // Luôn bắt đầu session khi controller được khởi tạo
-        if (session_status() == PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        $this->db = (new database())->getConnection();
+        if (session_status() === PHP_SESSION_NONE) { session_start(); }
+        $this->db = (new Database())->getConnection();
         $this->productModel = new ProductModel($this->db);
     }
 
-    // Kiểm tra quyền Admin
-    private function isAdmin() {
-        return SessionHelper::isAdmin();
-    }
+    private function isAdmin() { return SessionHelper::isAdmin(); }
 
-
+    // ====================== SẢN PHẨM ======================
     public function index() {
         $products = $this->productModel->getProducts();
         include 'app/views/product/list.php';
@@ -30,352 +24,216 @@ class ProductController {
 
     public function show($id) {
         $product = $this->productModel->getProductById($id);
-        if ($product) {
-            include 'app/views/product/show.php';
-        } else {
-            echo "Không thấy sản phẩm.";
+        if ($product) include 'app/views/product/show.php'; else echo "Không thấy sản phẩm.";
+    }
+
+    public function add() {
+        if (!$this->isAdmin()) { echo "Bạn không có quyền!"; exit; }
+        $categories = (new CategoryModel($this->db))->getCategories();
+        include 'app/views/product/add.php';
+    }
+
+    public function save() {
+        if (!$this->isAdmin()) { echo "Bạn không có quyền!"; exit; }
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $name = $_POST['name'] ?? ''; $description = $_POST['description'] ?? '';
+            $price = $_POST['price'] ?? ''; $category_id = $_POST['category_id'] ?? null;
+            $image = (isset($_FILES['image']) && $_FILES['image']['error'] == 0) ? $this->uploadImage($_FILES['image']) : "";
+            $this->productModel->addProduct($name, $description, $price, $category_id, $image);
+            header('Location: /Website-PhanBon/Product/manage'); exit; // Sửa lại redirect về trang quản lý
         }
     }
 
-    // Thêm sản phẩm (chỉ Admin)
-public function add() {
-if (!$this->isAdmin()) {
-echo "Bạn không có quyền truy cập chức năng này!";
-exit;
-}
-$categories = (new CategoryModel($this->db))->getCategories();
-include_once 'app/views/product/add.php';
-}
-
-    // Lưu sản phẩm mới (chỉ Admin)
-    public function save() {
-    if (!$this->isAdmin()) {
-    echo "Bạn không có quyền truy cập chức năng này!";
-    exit;
-    }
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $name = $_POST['name'] ?? '';
-    $description = $_POST['description'] ?? '';
-    $price = $_POST['price'] ?? '';
-    $category_id = $_POST['category_id'] ?? null;
-    $image = (isset($_FILES['image']) && $_FILES['image']['error'] == 0)
-    ? $this->uploadImage($_FILES['image'])
-    : "";
-    $result = $this->productModel->addProduct($name, $description, $price,
-    $category_id, $image);
-    if (is_array($result)) {
-    $errors = $result;
-    $categories = (new CategoryModel($this->db))->getCategories();
-    include 'app/views/product/add.php';
-    } else {
-    header('Location: /Website-PhanBon/Product');
-    }
-    }
+    public function edit($id) {
+        if (!$this->isAdmin()) { echo "Bạn không có quyền!"; exit; }
+        $product = $this->productModel->getProductById($id);
+        $categories = (new CategoryModel($this->db))->getCategories();
+        include 'app/views/product/edit.php';
     }
 
-    // Sửa sản phẩm (chỉ Admin)
-public function edit($id) {
-    if (!$this->isAdmin()) {
-    echo "Bạn không có quyền truy cập chức năng này!";
-    exit;
-    }
-    $product = $this->productModel->getProductById($id);
-    $categories = (new CategoryModel($this->db))->getCategories();
-    if ($product) {
-    include 'app/views/product/edit.php';
-    } else {
-    echo "Không thấy sản phẩm.";
-    }
+    public function update() {
+        if (!$this->isAdmin()) { echo "Bạn không có quyền!"; exit; }
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id = $_POST['id']; $name = $_POST['name']; $description = $_POST['description'];
+            $price = $_POST['price']; $category_id = $_POST['category_id'];
+            $image = (isset($_FILES['image']) && $_FILES['image']['error'] == 0) ? $this->uploadImage($_FILES['image']) : $_POST['existing_image'];
+            $this->productModel->updateProduct($id, $name, $description, $price, $category_id, $image);
+            header('Location: /Website-PhanBon/Product/manage'); exit; // Sửa lại redirect về trang quản lý
+        }
     }
 
-    // Cập nhật sản phẩm (chỉ Admin)
-public function update() {
-    if (!$this->isAdmin()) {
-    echo "Bạn không có quyền truy cập chức năng này!";
-    exit;
-}
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-$id = $_POST['id'];
-$name = $_POST['name'];
-$description = $_POST['description'];
-$price = $_POST['price'];
-$category_id = $_POST['category_id'];
-$image = (isset($_FILES['image']) && $_FILES['image']['error'] == 0)
-? $this->uploadImage($_FILES['image'])
-: $_POST['existing_image'];
-$edit = $this->productModel->updateProduct($id, $name, $description,
-$price, $category_id, $image);
-if ($edit) {
-header('Location: /Website-PhanBon/Product');
-} else {
-echo "Đã xảy ra lỗi khi lưu sản phẩm.";
-}
-}
-}
-
-    // Xóa sản phẩm (chỉ Admin)
-public function delete($id) {
-    if (!$this->isAdmin()) {
-    echo "Bạn không có quyền truy cập chức năng này!";
-    exit;
-    }
-    if ($this->productModel->deleteProduct($id)) {
-    header('Location: /Website-PhanBon/Product');
-    } else {
-    echo "Đã xảy ra lỗi khi xóa sản phẩm.";
-    }
+    public function delete($id) {
+        if (!$this->isAdmin()) { echo "Bạn không có quyền!"; exit; }
+        $this->productModel->deleteProduct($id);
+        header('Location: /Website-PhanBon/Product/manage'); exit; // Sửa lại redirect về trang quản lý
     }
 
     private function uploadImage($file) {
-        $document_root = $_SERVER['DOCUMENT_ROOT'];
-        $target_dir = $document_root . "/Website-PhanBon/uploads/";
-
-        if (!is_dir($target_dir)) {
-            $old_umask = umask(0);
-            $created = mkdir($target_dir, 0777, true);
-            umask($old_umask);
-            if (!$created) {
-                throw new Exception("Không thể tạo thư mục uploads.");
-            }
-        }
-
-        if (!is_writable($target_dir)) {
-            @chmod($target_dir, 0777);
-            if (!is_writable($target_dir)) {
-                throw new Exception("Thư mục uploads không có quyền ghi.");
-            }
-        }
-
-        $imageFileType = strtolower(pathinfo($file["name"], PATHINFO_EXTENSION));
-        $unique_filename = uniqid() . '_' . time() . '.' . $imageFileType;
-        $target_file = $target_dir . $unique_filename;
-
-        if (getimagesize($file["tmp_name"]) === false) {
-            throw new Exception("File không phải là hình ảnh.");
-        }
-
-        if ($file["size"] > 10 * 1024 * 1024) {
-            throw new Exception("Hình ảnh có kích thước quá lớn (tối đa 10MB).");
-        }
-
-        if (!in_array($imageFileType, ["jpg", "jpeg", "png", "gif"])) {
-            throw new Exception("Chỉ cho phép các định dạng JPG, JPEG, PNG và GIF.");
-        }
-
-        if (!move_uploaded_file($file["tmp_name"], $target_file)) {
-            throw new Exception("Có lỗi xảy ra khi tải lên hình ảnh.");
-        }
-
-        return "uploads/" . $unique_filename;
+        $target_dir = $_SERVER['DOCUMENT_ROOT'] . "/Website-PhanBon/uploads/";
+        if (!is_dir($target_dir)) mkdir($target_dir, 0777, true);
+        $unique = uniqid() . '_' . time() . '.' . strtolower(pathinfo($file["name"], PATHINFO_EXTENSION));
+        move_uploaded_file($file["tmp_name"], $target_dir . $unique);
+        return "uploads/" . $unique;
     }
 
-    // ==================================================================
-    // == PHẦN XỬ LÝ GIỎ HÀNG ==
-    // ==================================================================
-
+    // ====================== GIỎ HÀNG ======================
     public function cart() {
         $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
         include 'app/views/product/cart.php';
     }
 
-    /**
-     * Thêm sản phẩm vào giỏ hàng (Xử lý bằng AJAX) - CẢI TIẾN
-     */
     public function addToCart($id) {
-        header('Content-Type: application/json');
-        
+        header('Content-Type: application/json; charset=utf-8');
+        if (!SessionHelper::isLoggedIn()) { echo json_encode(['success' => false, 'message' => 'Cần đăng nhập.']); exit; }
         $product = $this->productModel->getProductById($id);
-        
-        if (!$product) {
-            echo json_encode([
-                'success' => false, 
-                'message' => 'Không tìm thấy sản phẩm.'
-            ]);
-            exit();
-        }
-
-        if (!isset($_SESSION['cart'])) {
-            $_SESSION['cart'] = [];
-        }
-
-        // Thêm hoặc tăng số lượng
-        if (isset($_SESSION['cart'][$id])) {
-            $_SESSION['cart'][$id]['quantity']++;
-        } else {
-            $_SESSION['cart'][$id] = [
-                'name' => $product->name,
-                'price' => $product->price,
-                'quantity' => 1,
-                'image' => $product->image
-            ];
-        }
-
-        // Tính tổng số lượng sản phẩm trong giỏ hàng
-        $cartCount = 0;
-        foreach ($_SESSION['cart'] as $item) {
-            $cartCount += $item['quantity'];
-        }
-
-        echo json_encode([
-            'success' => true,
-            'message' => 'Đã thêm vào giỏ hàng!',
-            'cartCount' => $cartCount
-        ]);
-        exit();
+        if (!$product) { echo json_encode(['success' => false]); exit; }
+        if (!isset($_SESSION['cart'])) $_SESSION['cart'] = [];
+        if (isset($_SESSION['cart'][$id])) $_SESSION['cart'][$id]['quantity']++;
+        else $_SESSION['cart'][$id] = ['name' => $product->name, 'price' => $product->price, 'quantity' => 1, 'image' => $product->image];
+        echo json_encode(['success' => true, 'cartCount' => array_sum(array_column($_SESSION['cart'], 'quantity'))]); exit;
     }
 
-    /**
-     * Cập nhật số lượng sản phẩm trong giỏ hàng (Xử lý bằng AJAX)
-     */
     public function updateCart() {
         header('Content-Type: application/json');
         $data = json_decode(file_get_contents('php://input'), true);
-
-        if (!$data || !isset($data['id']) || !isset($data['quantity'])) {
-            echo json_encode(['success' => false, 'message' => 'Dữ liệu không hợp lệ.']);
-            exit;
-        }
-
-        $productId = $data['id'];
-        $quantity = (int)$data['quantity'];
-
-        if (isset($_SESSION['cart'][$productId]) && $quantity > 0) {
-            $_SESSION['cart'][$productId]['quantity'] = $quantity;
-
-            $item = $_SESSION['cart'][$productId];
-            $itemSubtotal = $item['price'] * $item['quantity'];
-
-            $cartTotal = 0;
-            $cartCount = 0;
-            foreach ($_SESSION['cart'] as $cartItem) {
-                $cartTotal += $cartItem['price'] * $cartItem['quantity'];
-                $cartCount += $cartItem['quantity'];
-            }
-
-            $response = [
-                'success' => true,
-                'itemSubtotal' => number_format($itemSubtotal, 0, ',', '.') . ' VND',
-                'cartTotal' => number_format($cartTotal, 0, ',', '.') . ' VND',
-                'cartCount' => $cartCount
-            ];
-        } else {
-            $response = ['success' => false, 'message' => 'Sản phẩm không tồn tại hoặc số lượng không hợp lệ.'];
-        }
-
-        echo json_encode($response);
-        exit;
+        $id = $data['id']; $qty = (int)$data['quantity'];
+        if (isset($_SESSION['cart'][$id]) && $qty > 0) {
+            $_SESSION['cart'][$id]['quantity'] = $qty;
+            $total = 0; $count = 0;
+            foreach ($_SESSION['cart'] as $item) { $total += $item['price'] * $item['quantity']; $count += $item['quantity']; }
+            echo json_encode(['success' => true, 'itemSubtotal' => number_format($_SESSION['cart'][$id]['price']*$qty, 0,',','.').' VND', 'cartTotal' => number_format($total, 0,',','.').' VND', 'cartCount' => $count]);
+        } else echo json_encode(['success' => false]); exit;
     }
 
-    /**
-     * Xóa một sản phẩm khỏi giỏ hàng (Xử lý bằng AJAX)
-     */
     public function removeFromCart() {
         header('Content-Type: application/json');
         $data = json_decode(file_get_contents('php://input'), true);
-
-        if (!$data || !isset($data['id'])) {
-            echo json_encode(['success' => false, 'message' => 'Dữ liệu không hợp lệ.']);
-            exit;
-        }
-
-        $productId = $data['id'];
-
-        if (isset($_SESSION['cart'][$productId])) {
-            unset($_SESSION['cart'][$productId]);
-
-            $cartTotal = 0;
-            $cartCount = 0;
-            foreach ($_SESSION['cart'] as $cartItem) {
-                $cartTotal += $cartItem['price'] * $cartItem['quantity'];
-                $cartCount += $cartItem['quantity'];
-            }
-
-            $response = [
-                'success' => true,
-                'cartTotal' => number_format($cartTotal, 0, ',', '.') . ' VND',
-                'cartCount' => $cartCount,
-                'cartEmpty' => empty($_SESSION['cart'])
-            ];
-        } else {
-            $response = ['success' => false, 'message' => 'Sản phẩm không có trong giỏ hàng.'];
-        }
-
-        echo json_encode($response);
-        exit;
+        $id = $data['id'];
+        if (isset($_SESSION['cart'][$id])) {
+            unset($_SESSION['cart'][$id]);
+            $total = 0; $count = 0;
+            foreach ($_SESSION['cart'] as $item) { $total += $item['price'] * $item['quantity']; $count += $item['quantity']; }
+            echo json_encode(['success' => true, 'cartTotal' => number_format($total, 0,',','.').' VND', 'cartCount' => $count, 'cartEmpty' => empty($_SESSION['cart'])]);
+        } else echo json_encode(['success' => false]); exit;
     }
 
-    // ==================================================================
-    // == PHẦN XỬ LÝ THANH TOÁN ==
-    // ==================================================================
-
-    public function checkout() {
-        include 'app/views/product/checkout.php';
-    }
+    // ====================== THANH TOÁN (GIỮ NGUYÊN) ======================
+    public function checkout() { include 'app/views/product/checkout.php'; }
 
     public function processCheckout() {
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $name = $_POST['name'];
-            $phone = $_POST['phone'];
-            $address = $_POST['address'];
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $name = $_POST['name']; $phone = $_POST['phone']; $address = $_POST['address'];
+            $method = $_POST['payment_method'] ?? 'COD';
+            if (empty($_SESSION['cart'])) { echo "Giỏ hàng trống."; return; }
             
-            if (!isset($_SESSION['cart']) || empty($_SESSION['cart'])) {
-                echo "Giỏ hàng trống.";
-                return;
-            }
-            
-            $this->db->beginTransaction();
-            
-            try {
-                // Lưu đơn hàng với status mặc định là 'pending'
-                $query = "INSERT INTO orders (name, phone, address, status, payment_method, shipping_fee) 
-                         VALUES (:name, :phone, :address, 'pending', 'COD', 0)";
-                $stmt = $this->db->prepare($query);
-                $stmt->bindParam(':name', $name);
-                $stmt->bindParam(':phone', $phone);
-                $stmt->bindParam(':address', $address);
-                $stmt->execute();
-                $order_id = $this->db->lastInsertId();
-                
-                // Lưu chi tiết đơn hàng
-                $cart = $_SESSION['cart'];
-                foreach ($cart as $product_id => $item) {
-                    $query = "INSERT INTO order_details (order_id, product_id, quantity, price) 
-                             VALUES (:order_id, :product_id, :quantity, :price)";
-                    $stmt = $this->db->prepare($query);
-                    $stmt->bindParam(':order_id', $order_id);
-                    $stmt->bindParam(':product_id', $product_id);
-                    $stmt->bindParam(':quantity', $item['quantity']);
-                    $stmt->bindParam(':price', $item['price']);
-                    $stmt->execute();
-                }
-                
-                unset($_SESSION['cart']);
-                $this->db->commit();
-                
-                header('Location: /Website-PhanBon/Product/orderConfirmation');
-            } catch (Exception $e) {
-                $this->db->rollBack();
-                echo "Đã xảy ra lỗi: " . $e->getMessage();
+            $_SESSION['pending_order_info'] = ['name' => $name, 'phone' => $phone, 'address' => $address];
+            $total = 0; foreach ($_SESSION['cart'] as $item) $total += $item['price'] * $item['quantity'];
+
+            switch ($method) {
+                case 'MOMO': $this->createMomoPayment($total); break;
+                case 'VNPAY': $this->createVnpayPayment($total); break;
+                default: $this->saveOrderToDatabase($name, $phone, $address, 'COD', 'pending'); 
+                         header('Location: /Website-PhanBon/Product/orderConfirmation'); break;
             }
         }
     }
 
-    public function orderConfirmation() {
-        include 'app/views/product/orderConfirmation.php';
+    private function saveOrderToDatabase($name, $phone, $address, $method, $status) {
+        $this->db->beginTransaction();
+        try {
+            $query = "INSERT INTO orders (name, phone, address, status, payment_method) VALUES (:name, :phone, :address, :status, :method)";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([':name'=>$name, ':phone'=>$phone, ':address'=>$address, ':status'=>$status, ':method'=>$method]);
+            $order_id = $this->db->lastInsertId();
+            
+            foreach ($_SESSION['cart'] as $pid => $item) {
+                $q2 = "INSERT INTO order_details (order_id, product_id, quantity, price) VALUES (:oid, :pid, :qty, :price)";
+                $stmt2 = $this->db->prepare($q2);
+                $stmt2->execute([':oid'=>$order_id, ':pid'=>$pid, ':qty'=>$item['quantity'], ':price'=>$item['price']]);
+            }
+            unset($_SESSION['cart']); $this->db->commit();
+        } catch (Exception $e) { $this->db->rollBack(); echo "Lỗi: " . $e->getMessage(); exit; }
     }
-    // Thêm vào ProductController
-public function manage() {
-    if (!$this->isAdmin()) {
-        echo "Bạn không có quyền truy cập chức năng này!";
+
+    private function createMomoPayment($amount) { include 'app/views/product/momo_simulate.php'; exit; }
+    public function momoReturn() {
+        if (isset($_GET['resultCode']) && $_GET['resultCode'] == '0') {
+            $info = $_SESSION['pending_order_info'];
+            $this->saveOrderToDatabase($info['name'], $info['phone'], $info['address'], 'MOMO', 'processing');
+            unset($_SESSION['pending_order_info']);
+            header('Location: /Website-PhanBon/Product/orderConfirmation'); exit;
+        }
+    }
+
+    private function createVnpayPayment($amount) { include 'app/views/product/vnpay_simulate.php'; exit; }
+    public function vnpayReturn() {
+        if (isset($_GET['vnp_ResponseCode']) && $_GET['vnp_ResponseCode'] == '00') {
+            $info = $_SESSION['pending_order_info'];
+            $this->saveOrderToDatabase($info['name'], $info['phone'], $info['address'], 'VNPAY', 'paid');
+            unset($_SESSION['pending_order_info']);
+            header('Location: /Website-PhanBon/Product/orderConfirmation'); exit;
+        }
+    }
+    public function orderConfirmation() { include 'app/views/product/orderConfirmation.php'; }
+
+    // ====================== QUẢN LÝ ĐƠN HÀNG ======================
+    public function manageOrders() {
+        if (!$this->isAdmin()) { echo "Bạn không có quyền!"; exit; }
+        
+        $sqlStats = "SELECT COUNT(*) as total_orders, 
+            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
+            SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_orders,
+            SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_orders FROM orders";
+        $stmtStats = $this->db->prepare($sqlStats);
+        $stmtStats->execute();
+        $statistics = $stmtStats->fetch(PDO::FETCH_OBJ);
+
+        $stmt = $this->db->prepare("SELECT * FROM orders ORDER BY id DESC");
+        $stmt->execute();
+        $orders = $stmt->fetchAll(PDO::FETCH_OBJ);
+        include 'app/views/product/manage.php'; // Lưu ý: View này có thể đang dùng chung, cần kiểm tra kỹ
+    }
+
+    public function deleteOrder() {
+        header('Content-Type: application/json');
+        if (!$this->isAdmin()) { echo json_encode(['success' => false, 'message' => 'Không có quyền.']); exit; }
+        $data = json_decode(file_get_contents('php://input'), true);
+        $id = $data['id'] ?? null;
+        if ($id) {
+            try {
+                $this->db->prepare("DELETE FROM order_details WHERE order_id = :id")->execute([':id'=>$id]);
+                if ($this->db->prepare("DELETE FROM orders WHERE id = :id")->execute([':id'=>$id])) {
+                    echo json_encode(['success' => true]);
+                } else echo json_encode(['success' => false]);
+            } catch (Exception $e) { echo json_encode(['success' => false, 'message' => $e->getMessage()]); }
+        } else echo json_encode(['success' => false]);
+        exit;
+    }
+
+    public function updateOrderStatus() {
+        header('Content-Type: application/json');
+        $data = json_decode(file_get_contents('php://input'), true);
+        if ($data && isset($data['order_id'])) {
+            $stmt = $this->db->prepare("UPDATE orders SET status = ? WHERE id = ?");
+            if ($stmt->execute([$data['status'], $data['order_id']])) echo json_encode(['success'=>true]);
+            else echo json_encode(['success'=>false]);
+        }
         exit;
     }
     
-    $products = $this->productModel->getProducts();
-    $categories = (new CategoryModel($this->db))->getCategories();
-    include 'app/views/product/manage.php';
-}
-
-    
-
+    // ====================== QUẢN LÝ SẢN PHẨM (ĐÃ SỬA) ======================
+    public function manage() {
+        if (!$this->isAdmin()) { echo "Bạn không có quyền!"; exit; }
+        
+        // 1. Lấy danh sách sản phẩm
+        $products = $this->productModel->getProducts();
+        
+        // 2. Lấy danh sách danh mục (ĐÃ THÊM MỚI ĐỂ SỬA LỖI)
+        $categoryModel = new CategoryModel($this->db);
+        $categories = $categoryModel->getCategories(); 
+        
+        // 3. Truyền cả 2 biến vào view
+        include 'app/views/product/manage.php';
+    }
 }
 ?>

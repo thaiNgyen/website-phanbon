@@ -13,7 +13,7 @@ require_once 'app/models/ProductModel.php';
 require_once 'app/helpers/SessionHelper.php';
 
 // Xử lý URL
-// ví dụ: /Product/add
+// ví dụ: /Admin/reports  hoặc /Product/add
 $url = $_GET['url'] ?? '';
 $url = rtrim($url, '/');
 $url = filter_var($url, FILTER_SANITIZE_URL);
@@ -21,11 +21,51 @@ $url = explode('/', $url);
 
 // Kiểm tra phần đầu tiên của URL để xác định controller
 // Nếu không có, controller mặc định sẽ là 'DefaultController'
-$controllerName = isset($url[0]) && $url[0] != '' ? ucfirst($url[0]) . 'Controller' : 'DefaultController';
+$controllerName = isset($url[0]) && $url[0] != '' ? ucfirst($url[0]) . 'Controller' : 'ProductController';
 
 // Kiểm tra phần thứ hai của URL để xác định action (phương thức)
 // Nếu không có, action mặc định sẽ là 'index'
 $action = isset($url[1]) && $url[1] != '' ? $url[1] : 'index';
+
+/*
+ |----------------------------------------------------------
+ | Xử lý riêng cho AdminController
+ | URL dạng: /Admin/reports, /Admin/exportExcel, /Admin/dashboard, ...
+ |----------------------------------------------------------
+*/
+if ($controllerName === 'AdminController') {
+    require_once 'app/controllers/AdminController.php';
+    $controller = new AdminController();
+
+    switch ($action) {
+        case 'reports':
+            $controller->reports();
+            break;
+        case 'exportExcel':
+            $controller->exportExcel();
+            break;
+        case 'exportPDF':
+            $controller->exportPDF();
+            break;
+        case 'dashboard':
+            $controller->dashboard();
+            break;
+        case 'settings':
+            $controller->settings();
+            break;
+        default:
+            // Nếu không khớp action nào, về dashboard
+            $controller->dashboard();
+            break;
+    }
+
+    // Dừng lại, không chạy tiếp router chung bên dưới nữa
+    exit;
+}
+
+// ----------------------------------------------------------
+// Router chung cho các controller còn lại
+// ----------------------------------------------------------
 
 // Kiểm tra xem tệp controller có tồn tại không
 if (!file_exists('app/controllers/' . $controllerName . '.php')) {

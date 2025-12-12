@@ -42,19 +42,32 @@
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
-/* Zalo Button */
+/* Zalo Button - Fixed */
 .zalo-button {
     background: linear-gradient(135deg, #0068FF 0%, #0084FF 100%);
+    position: relative;
 }
 
-.zalo-button::before {
-    content: '';
+.zalo-button .zalo-icon {
+    width: 38px;
+    height: 38px;
+    background: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 24px;
+    color: #0068FF;
+    font-family: Arial, sans-serif;
+    letter-spacing: -1px;
+}
+
+/* Alternative: Use SVG logo */
+.zalo-button .zalo-logo-svg {
     width: 35px;
     height: 35px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 460.1 436.6'%3E%3Cpath fill='%23FFF' d='M82.6 380.9c-1.8-.8-3.1-1.7-1-3.5 1.3-1 2.7-1.9 4.1-2.8 13.1-8.5 25.4-17.8 33.5-31.5 6.8-11.4 5.7-18.1-2.8-26.5C69 269.2 48.2 212.5 58.6 145.5 64.5 107.7 81.8 75 107 46.6c15.2-17.2 33.3-31.1 53.1-42.7 1.2-.7 2.9-.9 3.1-2.7-.4-1-1.1-.7-1.7-.7-33.7 0-67.4-.7-101 .2C28.3 1.7.5 26.6.6 62.3c.2 104.3 0 208.6 0 313 0 32.4 24.7 59.5 57 60.7 27.3 1.1 54.6.2 82 .1 2 .1 4 .2 6 .2H290c36 0 72 .2 108 0 33.4 0 60.5-27 60.5-60.3v-.6-21.5c-1.4 0-2.2.5-3.1.7-11.2 3.1-21.2 8.6-29.9 16.5-16.9 15.5-18.7 34.2-16.1 55.4 0 .4.1.9.1 1.3v.6c0 17.5-14.3 31.8-31.8 31.8H142.6c-17.5 0-31.8-14.3-31.8-31.8v-.6-64.9c0-17.5 14.3-31.7 31.8-31.7h74.9c1.4 0 2.7-.3 4.1-.4 7.2-.4 13.8-2.9 20-6.8 12.3-7.9 25.1-14.8 38.2-21 .3-.2.6-.4.9-.6.6-.4 1.2-.8 1.8-1.2 11.3-7.5 22.6-14.9 33.9-22.3 1.8-1.2 1.8-1.2 1.8-3.6v-115.4c0-17.5-14.3-31.7-31.8-31.7H142.6c-17.5 0-31.8 14.3-31.8 31.7V360.8c0 2.6-1.1 4.3-3 6.1-4.9 4.6-8.9 9.8-11.8 15.8-.6 1.2-1.2 2.4-1.8 3.6-.8 1.6-1.6 3.2-2.3 4.8z'/%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
-    display: block;
+    fill: white;
 }
 
 /* Facebook Messenger Button */
@@ -176,6 +189,12 @@
         height: 55px;
     }
 
+    .zalo-button .zalo-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 20px;
+    }
+
     .messenger-button i,
     .phone-button i {
         font-size: 26px;
@@ -189,12 +208,20 @@
 
 <!-- Chat Widget Container -->
 <div class="chat-widget-container">
-    <!-- Zalo Button -->
+    <!-- Zalo Button với logo mới -->
     <a href="https://zalo.me/0346024870" 
        target="_blank" 
        class="chat-button zalo-button"
        title="Chat với chúng tôi qua Zalo">
         <span class="online-badge"></span>
+        <!-- Option 1: Dùng text "Z" style giống logo Zalo -->
+        <span class="zalo-icon">Z</span>
+        
+        <!-- Option 2: Hoặc dùng SVG logo Zalo (uncomment nếu muốn dùng) -->
+        <!-- <svg class="zalo-logo-svg" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 4C12.96 4 4 12.96 4 24s8.96 20 20 20 20-8.96 20-20S35.04 4 24 4zm0 36c-8.82 0-16-7.18-16-16S15.18 8 24 8s16 7.18 16 16-7.18 16-16 16zm-3.5-23h-4v2h4v-2zm0 4h-7v2h7v-2zm0 4h-5v2h5v-2zm7-8v8l6-4-6-4z"/>
+        </svg> -->
+        
         <span class="chat-tooltip">Chat qua Zalo</span>
     </a>
 
@@ -209,11 +236,11 @@
     </a>
 
     <!-- Phone Button -->
-    <a href="tel:0865399086" 
+    <a href="tel:0346024870" 
        class="chat-button phone-button"
        title="Gọi điện thoại ngay">
         <i class="bi bi-telephone-fill"></i>
-        <span class="chat-tooltip">0346024870</span>
+        <span class="chat-tooltip">0346 024 870</span>
     </a>
 </div>
 
@@ -267,6 +294,8 @@ document.querySelectorAll('.chat-button').forEach(button => {
 let lastScrollTop = 0;
 window.addEventListener('scroll', function() {
     const chatWidget = document.querySelector('.chat-widget-container');
+    if (!chatWidget) return;
+    
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     
     if (scrollTop > lastScrollTop && scrollTop > 300) {

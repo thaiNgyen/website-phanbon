@@ -3,8 +3,7 @@ class database {
 private $host = "localhost";
 private $db_name = "website_phanbon";
 private $username = "root";
-private $password =
-"";
+private $password ="";
 public $conn;
 public function getConnection() {
 $this->conn = null;

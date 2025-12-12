@@ -19,7 +19,7 @@ python -m venv .venv && . .venv/bin/activate  # on Windows: .venv\Scripts\activa
 pip install -r requirements.txt
 
 # 3) Run API
-uvicorn main:app --reload
+uvicorn main:app --reload ------ uvicorn main:app --host 127.0.0.1 --port 9000
 # Swagger at: http://127.0.0.1:8000/docs
 ```
 

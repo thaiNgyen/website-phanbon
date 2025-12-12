@@ -9,20 +9,20 @@ class DetectController {
         $result = null;
 
         if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["image"])) {
-            $imgPath = $_FILES["image"]["tmp_name"];
-            $result = $this->callAI($imgPath);
-            $fileTmp = $_FILES["image"]["tmp_name"];
-            $fileName = time() . "_" . $_FILES["image"]["name"];
-            $savePath = __DIR__ . "/../../uploads/" . $fileName;
 
-            move_uploaded_file($fileTmp, $savePath);
+    // Lưu file vào uploads
+    $fileTmp = $_FILES["image"]["tmp_name"];
+    $fileName = time() . "_" . $_FILES["image"]["name"];
+    $savePath = __DIR__ . "/../../uploads/" . $fileName;
 
-            // Gửi ảnh cho AI
-            $result = $this->callAI($savePath);
+    move_uploaded_file($fileTmp, $savePath);
 
-            // Trả đường dẫn ảnh cho view
-            $uploadedImage = "/Website-PhanBon/uploads/" . $fileName;
-        }
+    // Gọi AI đúng 1 lần
+    $result = $this->callAI($savePath);
+
+    // Chuẩn bị đường dẫn ảnh cho view
+    $uploadedImage = "/Website-PhanBon/uploads/" . $fileName;
+}
         $uploadedImage = $uploadedImage ?? null;
         require __DIR__ . '/../views/product/detect.php';
     }
@@ -44,7 +44,7 @@ class DetectController {
 
         if ($this->isAPIAlive()) return;
 
-        $bat = 'E:\\xampp\\htdocs\\website-phanbon\\ai\\run_ai_hidden.bat';
+        $bat = 'E:\\Xamppp\\htdocs\\website-phanbon\\ai\\run_ai_hidden.bat';
 
         // chạy ẩn không bật CMD
         pclose(popen("start /B cmd /C \"$bat\"", "r"));
@@ -55,27 +55,26 @@ class DetectController {
 
     // GỌI API DỰ ĐOÁN
     private function callAI($imagePath) {
-        $url = "http://127.0.0.1:8000/predict";
+    $url = "http://127.0.0.1:8000/predict";
 
-        $file = curl_file_create($imagePath);
-        $payload = ["file" => $file];
+    $file = curl_file_create($imagePath);
+    $payload = ["file" => $file];
 
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
 
-        $response = curl_exec($ch);
-        curl_close($ch);
+    $response = curl_exec($ch);
+    curl_close($ch);
 
-        if (!$response) {
-            return [
-                "class" => "Không nhận được phản hồi từ AI",
-                "confidence" => 0
-            ];
-        }
-
-        $data = json_decode($response, true);
-        return $data["result"] ?? null;
+    if (!$response) {
+        return ["class" => "Lỗi API", "confidence" => 0];
     }
+
+    $data = json_decode($response, true);
+
+    // Tránh lỗi undefined index
+    return $data["result"] ?? ["class" => "API trả sai format", "confidence" => 0];
+}
 }

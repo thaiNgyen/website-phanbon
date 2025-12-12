@@ -135,4 +135,8 @@ class OrderModel {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
+
+    // Trong file app/models/OrderModel.php
+
+    // FILE: app/models/OrderModel.php
 }

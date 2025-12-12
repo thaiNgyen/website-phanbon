@@ -26,6 +26,32 @@
                             <textarea id="address" name="address" class="form-control" placeholder="Địa chỉ" style="height: 100px" required></textarea>
                             <label for="address">Địa chỉ</label>
                         </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Phương thức thanh toán:</label>
+                            <div class="card p-3 bg-light">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="cod" value="COD" checked>
+                                    <label class="form-check-label" for="cod">
+                                        <i class="bi bi-cash-stack me-2"></i>Thanh toán khi nhận hàng (COD)
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="momo" value="MOMO">
+                                    <label class="form-check-label" for="momo">
+                                        <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" width="20" class="me-2 rounded">Thanh toán qua Ví MoMo
+                                    </label>
+                                </div>
+
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="vnpay" value="VNPAY">
+                                    <label class="form-check-label" for="vnpay">
+                                        <img src="https://vnpay.vn/s1/statics.vnpay.vn/2023/9/06ncktiwd6dc1694418196384.png" width="20" class="me-2 rounded">Thanh toán qua VNPAY
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                         
                         <div class="d-grid gap-2">
                              <button type="submit" class="btn btn-success btn-lg">Xác nhận thanh toán</button>

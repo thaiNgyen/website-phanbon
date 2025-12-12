@@ -246,10 +246,16 @@ require_once __DIR__ . '/../../helpers/SessionHelper.php';
                     <a class="nav-link font-weight-bold text-danger" href="/Website-PhanBon/Product/">
                         <i class="bi bi-house-door-fill"></i> TRANG CHỦ
                     </a>
-                    <a class="nav-link font-weight-bold text-danger" href="/Website-PhanBon/Detect/">
-                        DỰ ĐOÁN BỆNH
+                </li>
+
+                <?php if (SessionHelper::isLoggedIn() && SessionHelper::getRole() === 'user'): ?>
+                <li class="nav-item">
+                    <a class="nav-link" href="/Website-PhanBon/Detect/index" style="color: black;">
+                        🔍 Nhận biết bệnh
                     </a>
                 </li>
+                <?php endif; ?>
+                
 
                 <!-- Dropdown Quản Trị Admin (CHỈ ADMIN THẤY) -->
                 <?php if (SessionHelper::isAdmin()): ?>
@@ -337,11 +343,9 @@ require_once __DIR__ . '/../../helpers/SessionHelper.php';
                             <span>Quản Lý Người Dùng</span>
                         </a>
 
-                        <a class="dropdown-item" href="/Website-PhanBon/User/activityLogs">
-                            <i class="bi bi-journal-text text-warning"></i>
-                            <span>Nhật Ký Hoạt Động</span>
-                        </a>
+                        
                     </div>
+                    
                 </li>
                 <?php endif; ?>
             </ul>
