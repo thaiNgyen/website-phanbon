@@ -1,49 +1,42 @@
 <?php
 header("Content-Type: application/json");
+require_once "../app/config/database.php";
 
-// Nạp file cần thiết
-require_once __DIR__ . '/../app/config/database.php';
-require_once __DIR__ . '/../app/models/User.php';
+$db = new database();
+$conn = $db->getConnection();
 
-// Nhận dữ liệu POST từ Flutter
-$data = json_decode(file_get_contents("php://input"), true);
+// Lấy dữ liệu gửi từ Flutter
+$username = $_POST["username"] ?? "";
+$password = $_POST["password"] ?? "";
+$fullname = $_POST["fullname"] ?? "";
+$phone = $_POST["phone"] ?? "";
 
-if (!$data || empty($data['username']) || empty($data['password']) || empty($data['fullname'])) {
-    echo json_encode([
-        "success" => false,
-        "message" => "Missing required fields"
-    ]);
+// Kiểm tra rỗng
+if (!$username || !$password || !$fullname || !$phone) {
+    echo json_encode(["success" => false, "message" => "Vui lòng nhập đầy đủ thông tin"]);
     exit;
 }
 
-// Kết nối DB
-$database = new Database();
-$db = $database->getConnection();
+// Kiểm tra username trùng
+$sql = "SELECT id FROM account WHERE username = ?";
+$stmt = $conn->prepare($sql);
+$stmt->execute([$username]);
 
-// Kiểm tra username đã tồn tại chưa
-$check = $db->prepare("SELECT id FROM account WHERE username = :u");
-$check->execute([":u" => $data['username']]);
-
-if ($check->rowCount() > 0) {
-    echo json_encode([
-        "success" => false,
-        "message" => "Username already exists"
-    ]);
+if ($stmt->rowCount() > 0) {
+    echo json_encode(["success" => false, "message" => "Tên đăng nhập đã tồn tại"]);
     exit;
 }
 
-// Tạo User Model
-$userModel = new User($db);
+// Hash mật khẩu
+$hashed = password_hash($password, PASSWORD_BCRYPT);
 
-// Tạo user mới
-$created = $userModel->create([
-    "username" => $data['username'],
-    "fullname" => $data['fullname'],
-    "password" => $data['password'],
-    "role"     => "user"   // mặc định user
-]);
+// Lưu vào DB
+$sqlInsert = "INSERT INTO account (username, fullname, phone, password, role) 
+              VALUES (?, ?, ?, ?, 'user')";
+$stmtInsert = $conn->prepare($sqlInsert);
 
-echo json_encode([
-    "success" => $created,
-    "message" => $created ? "Register success" : "Register failed"
-]);
+if ($stmtInsert->execute([$username, $fullname, $phone, $hashed])) {
+    echo json_encode(["success" => true, "message" => "Đăng ký thành công"]);
+} else {
+    echo json_encode(["success" => false, "message" => "Đăng ký thất bại"]);
+}
